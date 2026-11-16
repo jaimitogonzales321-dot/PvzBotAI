@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PvZBot - Asistente IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .chat-card {
+            max-width: 850px;
+            margin: 30px auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.1);
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #27ae60, #1e8449);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+        }
+        .chat-box {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: white;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .user { align-items: flex-end; }
+        .bot { align-items: flex-start; }
+        .bubble {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 18px;
+        }
+        .user .bubble {
+            background: #27ae60;
+            color: white;
+        }
+        .bot .bubble {
+            background: #e9ecef;
+            color: black;
+        }
+        .chat-footer {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card chat-card">
+        <div class="chat-header text-center">
+            <h4>🌻 PvZBot</h4>
+            <small>Asistente Inteligente sobre Plants vs. Zombies</small>
+        </div>
+        
+        <div class="chat-box" id="chatBox">
+            <div class="message bot">
+                <div class="bubble">
+                    ¡Hola! Soy PvZBot. Pregúntame sobre plantas, zombis, costos de sol o defensas del jardín.
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-footer">
+            <div class="mb-2">
+                <select class="form-select" id="modo">
+                    <option value="llm">Generativo LLM (Gemini)</option>
+                    <option value="prolog">Lógica de Primer Orden (Prolog)</option>
+                </select>
+            </div>
+
+            <form id="chatForm" class="d-flex gap-2">
+                <input type="text" id="userInput" class="form-control" placeholder="Haz una pregunta sobre PvZ..." autocomplete="off" required>
+                <button type="submit" class="btn btn-success">Enviar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const chatBox = document.getElementById("chatBox");
+const chatForm = document.getElementById("chatForm");
+const userInput = document.getElementById("userInput");
+const modo = document.getElementById("modo");
+
+chatForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    appendMessage("user", message);
+    userInput.value = "";
+    const loading = appendLoading();
+
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: message, modo: modo.value })
+        });
+        
+        const data = await response.json();
+        loading.remove();
+        appendMessage("bot", data.response);
+    } catch(error) {
+        loading.remove();
+        appendMessage("bot", "Error al conectar con el servidor Flask.");
+    }
+});
+
+function appendMessage(sender, text) {
+    const div = document.createElement("div");
+    div.classList.add("message", sender);
+    div.innerHTML = `<div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function appendLoading() {
+    const div = document.createElement("div");
+    div.classList.add("message", "bot");
+    div.innerHTML = `<div class="bubble"><em>Generando respuesta...</em></div>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return div;
+}
+</script>
+</body>
+</html>
